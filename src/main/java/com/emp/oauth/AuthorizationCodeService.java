@@ -16,7 +16,7 @@ public class AuthorizationCodeService {
     long authCodeTtlSeconds;
 
     @Inject
-    InMemoryAuthorizationCodeStore codeStore;
+    AuthorizationCodeStoreService codeStoreService;
 
     public String issueCode(String clientId, String redirectUri, String scope, String resource, String codeChallenge,
             String codeChallengeMethod, String userId) {
@@ -31,7 +31,7 @@ public class AuthorizationCodeService {
                 codeChallenge,
                 codeChallengeMethod,
                 Instant.now().plusSeconds(authCodeTtlSeconds));
-        codeStore.save(record);
+        codeStoreService.save(record);
         return code;
     }
 

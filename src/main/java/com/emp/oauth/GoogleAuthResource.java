@@ -22,13 +22,16 @@ public class GoogleAuthResource {
     GoogleOidcClient googleOidcClient;
 
     @Inject
-    InMemoryAuthRequestStore authRequestStore;
+    AuthRequestStoreService authRequestStore;
 
     @Inject
     AuthorizationCodeService authorizationCodeService;
 
     @Inject
     FirestoreUserStore userStore;
+
+    @org.eclipse.microprofile.config.inject.ConfigProperty(name = "emp.oauth.auto-consent", defaultValue = "true")
+    boolean autoConsent;
 
     @GET
     @Path("/login")
@@ -66,6 +69,12 @@ public class GoogleAuthResource {
         }
         GoogleIdToken idToken = googleOidcClient.exchangeCode(code);
         userStore.upsertGoogleUser(idToken);
+        if (!autoConsent) {
+            authRequestStore.updateUserId(state, idToken.getSubject());
+            UriBuilder redirect = UriBuilder.fromPath("/oauth/consent")
+                    .queryParam("state", state);
+            return Response.seeOther(redirect.build()).build();
+        }
         String authCode = authorizationCodeService.issueCode(
                 record.getClientId(),
                 record.getRedirectUri(),
