@@ -3,7 +3,6 @@ package com.emp.oauth;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
@@ -37,14 +36,20 @@ public class OAuthStubResource {
     @Inject
     JwtService jwtService;
 
+    @Inject
+    InMemoryAuthRequestStore authRequestStore;
+
+    @Inject
+    AuthorizationCodeService authorizationCodeService;
+
     @ConfigProperty(name = "emp.oauth.test-user-id")
     java.util.Optional<String> testUserId;
 
-    @ConfigProperty(name = "emp.oauth.auth-code-ttl-seconds", defaultValue = "300")
-    long authCodeTtlSeconds;
-
     @ConfigProperty(name = "emp.oauth.default-resource")
     java.util.Optional<String> defaultResource;
+
+    @ConfigProperty(name = "emp.oauth.auth-request-ttl-seconds", defaultValue = "600")
+    long authRequestTtlSeconds;
 
     @GET
     @Path("/jwks.json")
@@ -92,21 +97,29 @@ public class OAuthStubResource {
         }
         String userId = testUserId.orElse(null);
         if (userId == null || userId.isBlank()) {
-            return redirectError(redirectUri, "access_denied", "user is not authenticated", state);
-        }
-        String code = generateCode();
-        Instant now = Instant.now();
-        AuthorizationCodeRecord record = new AuthorizationCodeRecord(
-                code,
+            AuthRequestRecord request = new AuthRequestRecord(
+                UUID.randomUUID().toString(),
                 clientId,
-                userId,
                 redirectUri,
                 scope,
                 resource,
                 codeChallenge,
                 codeChallengeMethod,
-                now.plusSeconds(authCodeTtlSeconds));
-        codeStore.save(record);
+                state,
+                Instant.now().plusSeconds(authRequestTtlSeconds));
+            authRequestStore.save(request);
+            UriBuilder redirect = UriBuilder.fromPath("/oauth/google/login")
+                    .queryParam("state", request.getId());
+            return Response.seeOther(redirect.build()).build();
+        }
+        String code = authorizationCodeService.issueCode(
+                clientId,
+                redirectUri,
+                scope,
+                resource,
+                codeChallenge,
+                codeChallengeMethod,
+                userId);
 
         UriBuilder redirect = UriBuilder.fromUri(redirectUri)
                 .queryParam("code", code);
@@ -240,12 +253,6 @@ public class OAuthStubResource {
             redirect.queryParam("state", state);
         }
         return Response.seeOther(redirect.build()).build();
-    }
-
-    private String generateCode() {
-        byte[] bytes = new byte[32];
-        new SecureRandom().nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     private boolean verifyPkce(String codeVerifier, String expectedChallenge) {
