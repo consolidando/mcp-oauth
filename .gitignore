@@ -45,3 +45,4 @@ nb-configuration.xml
 .certs/
 /deploy-native.bat
 /keys/
+/load-env.bat
