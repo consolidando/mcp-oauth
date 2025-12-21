@@ -1,29 +1,65 @@
-# oauth
+# oauth 😎
 
-# Environment setup
+## Overview
 
-Create a local `.env` (not committed) based on `.env.example`:
+Minimal OAuth 2.0 authorization server for MCP clients, built with Quarkus. It supports:
 
-```powershell
-Copy-Item .env.example .env
-```
+- Dynamic client registration (DCR)
+- Authorization code + PKCE (S256)
+- ES256 access tokens with JWKS publication
+- Google OIDC login
+- Firestore persistence for users, clients, auth requests, and auth codes
 
-Load the environment variables for the current PowerShell session:
+This service is designed to run as a standalone auth server, separate from your API and MCP server. It targets Google Cloud (Cloud Run + Firestore) out of the box.
 
-```powershell
-Get-Content .env | ForEach-Object {
-    if ($_ -match "=") {
-        $k, $v = $_.Split("=", 2)
-        Set-Item "env:$k" $v
-    }
-}
-```
+## Environment configuration
 
-Use the same `.env` for Cloud Run deployments:
+Copy `.env.example` to `.env` and fill in the real values. The `.env` file is not committed.
 
-```powershell
-gcloud run services update emp-auth --env-vars-file .env
-```
+### Core OAuth
+
+- `EMP_OAUTH_ISSUER`: Public issuer URL for this auth server.
+- `EMP_OAUTH_DEFAULT_RESOURCE`: Default resource/audience if none is provided.
+- `EMP_OAUTH_AUTH_CODE_TTL_SECONDS`: Auth code lifetime in seconds.
+- `EMP_OAUTH_AUTH_REQUEST_TTL_SECONDS`: Pending auth request lifetime in seconds.
+- `EMP_OAUTH_ACCESS_TOKEN_TTL_SECONDS`: Access token lifetime in seconds.
+- `EMP_OAUTH_AUTO_CONSENT`: If `true`, skip the consent screen after login.
+- `EMP_OAUTH_CONSENT_BRAND_NAME`: Brand text shown on the consent page.
+
+### Keys and JWKS (ES256)
+
+- `EMP_OAUTH_PUBLIC_KEY_PATH`: Path to the ES256 public key PEM.
+- `EMP_OAUTH_PRIVATE_KEY_SECRET`: Secret Manager resource for the ES256 private key.
+- `EMP_OAUTH_PRIVATE_KEY_PATH`: Local fallback for the ES256 private key PEM.
+- `EMP_OAUTH_KEY_ID`: `kid` for JWKS and JWT headers.
+
+### Google OIDC
+
+- `EMP_GOOGLE_CLIENT_ID`: OAuth client ID.
+- `EMP_GOOGLE_CLIENT_SECRET`: OAuth client secret.
+- `EMP_GOOGLE_REDIRECT_URI`: Must be `https://<issuer>/oauth/google/callback`.
+- `EMP_GOOGLE_AUTH_ENDPOINT`: Google auth endpoint.
+- `EMP_GOOGLE_TOKEN_ENDPOINT`: Google token endpoint.
+- `EMP_GOOGLE_JWKS_URI`: Google JWKS endpoint.
+- `EMP_GOOGLE_SCOPE`: OAuth scopes for login.
+
+### Firestore
+
+- `EMP_OAUTH_FIRESTORE_ENABLED`: Enable Firestore-backed stores.
+- `EMP_OAUTH_FIRESTORE_USERS_COLLECTION`: Users collection name.
+- `EMP_OAUTH_FIRESTORE_CLIENTS_COLLECTION`: Clients collection name.
+- `EMP_OAUTH_FIRESTORE_AUTH_CODES_COLLECTION`: Auth codes collection name.
+- `EMP_OAUTH_FIRESTORE_AUTH_REQUESTS_COLLECTION`: Auth requests collection name.
+
+### Deployment helpers (optional)
+
+- `EMP_PROJECT_ID`: GCP project id.
+- `EMP_REGION`: Cloud Run region.
+- `EMP_SERVICE_NAME`: Cloud Run service name.
+- `EMP_REPO_NAME`: Artifact Registry repo name.
+- `EMP_IMAGE_NAME`: Docker image name.
+- `EMP_IMAGE_TAG`: Docker image tag.
+
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
 If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
