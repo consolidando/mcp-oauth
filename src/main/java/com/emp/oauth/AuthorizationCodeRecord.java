@@ -71,4 +71,5 @@ public class AuthorizationCodeRecord {
     public void markUsed(Instant now) {
         this.usedAt = now;
     }
+
 }

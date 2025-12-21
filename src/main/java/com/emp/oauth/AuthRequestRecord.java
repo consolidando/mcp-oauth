@@ -12,10 +12,11 @@ public class AuthRequestRecord {
     private final String codeChallenge;
     private final String codeChallengeMethod;
     private final String originalState;
+    private final String userId;
     private final Instant expiresAt;
 
     public AuthRequestRecord(String id, String clientId, String redirectUri, String scope, String resource,
-            String codeChallenge, String codeChallengeMethod, String originalState, Instant expiresAt) {
+            String codeChallenge, String codeChallengeMethod, String originalState, String userId, Instant expiresAt) {
         this.id = id;
         this.clientId = clientId;
         this.redirectUri = redirectUri;
@@ -24,6 +25,7 @@ public class AuthRequestRecord {
         this.codeChallenge = codeChallenge;
         this.codeChallengeMethod = codeChallengeMethod;
         this.originalState = originalState;
+        this.userId = userId;
         this.expiresAt = expiresAt;
     }
 
@@ -57,6 +59,10 @@ public class AuthRequestRecord {
 
     public String getOriginalState() {
         return originalState;
+    }
+
+    public String getUserId() {
+        return userId;
     }
 
     public Instant getExpiresAt() {

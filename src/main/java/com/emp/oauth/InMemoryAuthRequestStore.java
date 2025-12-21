@@ -22,4 +22,23 @@ public class InMemoryAuthRequestStore {
     public void remove(String id) {
         requests.remove(id);
     }
+
+    public void updateUserId(String id, String userId) {
+        AuthRequestRecord existing = requests.get(id);
+        if (existing == null) {
+            return;
+        }
+        AuthRequestRecord updated = new AuthRequestRecord(
+                existing.getId(),
+                existing.getClientId(),
+                existing.getRedirectUri(),
+                existing.getScope(),
+                existing.getResource(),
+                existing.getCodeChallenge(),
+                existing.getCodeChallengeMethod(),
+                existing.getOriginalState(),
+                userId,
+                existing.getExpiresAt());
+        requests.put(id, updated);
+    }
 }

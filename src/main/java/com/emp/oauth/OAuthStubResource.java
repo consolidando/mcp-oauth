@@ -28,16 +28,16 @@ public class OAuthStubResource {
     JwksService jwksService;
 
     @Inject
-    InMemoryClientStore clientStore;
+    ClientStoreService clientStore;
 
     @Inject
-    InMemoryAuthorizationCodeStore codeStore;
+    AuthorizationCodeStoreService codeStoreService;
 
     @Inject
     JwtService jwtService;
 
     @Inject
-    InMemoryAuthRequestStore authRequestStore;
+    AuthRequestStoreService authRequestStore;
 
     @Inject
     AuthorizationCodeService authorizationCodeService;
@@ -51,6 +51,8 @@ public class OAuthStubResource {
     @ConfigProperty(name = "emp.oauth.auth-request-ttl-seconds", defaultValue = "600")
     long authRequestTtlSeconds;
 
+    @ConfigProperty(name = "emp.oauth.auto-consent", defaultValue = "true")
+    boolean autoConsent;
     @GET
     @Path("/jwks.json")
     @Produces(MediaType.APPLICATION_JSON)
@@ -106,9 +108,27 @@ public class OAuthStubResource {
                 codeChallenge,
                 codeChallengeMethod,
                 state,
+                null,
                 Instant.now().plusSeconds(authRequestTtlSeconds));
             authRequestStore.save(request);
             UriBuilder redirect = UriBuilder.fromPath("/oauth/google/login")
+                    .queryParam("state", request.getId());
+            return Response.seeOther(redirect.build()).build();
+        }
+        if (!autoConsent) {
+            AuthRequestRecord request = new AuthRequestRecord(
+                    UUID.randomUUID().toString(),
+                    clientId,
+                    redirectUri,
+                    scope,
+                    resource,
+                    codeChallenge,
+                    codeChallengeMethod,
+                    state,
+                    userId,
+                    Instant.now().plusSeconds(authRequestTtlSeconds));
+            authRequestStore.save(request);
+            UriBuilder redirect = UriBuilder.fromPath("/oauth/consent")
                     .queryParam("state", request.getId());
             return Response.seeOther(redirect.build()).build();
         }
@@ -148,7 +168,7 @@ public class OAuthStubResource {
         if (clientId == null || clientId.isBlank()) {
             return error(Response.Status.BAD_REQUEST, "invalid_request", "client_id is required");
         }
-        AuthorizationCodeRecord record = codeStore.find(code).orElse(null);
+        AuthorizationCodeRecord record = codeStoreService.find(code).orElse(null);
         if (record == null) {
             return error(Response.Status.BAD_REQUEST, "invalid_grant", "code is invalid");
         }
@@ -174,6 +194,7 @@ public class OAuthStubResource {
             return error(Response.Status.BAD_REQUEST, "invalid_grant", "code_verifier is invalid");
         }
         record.markUsed(Instant.now());
+        codeStoreService.markUsed(record.getCode());
         String audience = record.getResource();
         if (audience == null || audience.isBlank()) {
             audience = defaultResource.orElse(null);
