@@ -1,5 +1,29 @@
 # oauth
 
+# Environment setup
+
+Create a local `.env` (not committed) based on `.env.example`:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Load the environment variables for the current PowerShell session:
+
+```powershell
+Get-Content .env | ForEach-Object {
+    if ($_ -match "=") {
+        $k, $v = $_.Split("=", 2)
+        Set-Item "env:$k" $v
+    }
+}
+```
+
+Use the same `.env` for Cloud Run deployments:
+
+```powershell
+gcloud run services update emp-auth --env-vars-file .env
+```
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
 If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
