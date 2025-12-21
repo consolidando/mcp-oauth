@@ -27,6 +27,9 @@ public class GoogleAuthResource {
     @Inject
     AuthorizationCodeService authorizationCodeService;
 
+    @Inject
+    FirestoreUserStore userStore;
+
     @GET
     @Path("/login")
     public Response login(@QueryParam("state") String state) {
@@ -62,6 +65,7 @@ public class GoogleAuthResource {
             return redirectError(record.getRedirectUri(), "invalid_request", "code is required", record.getOriginalState());
         }
         GoogleIdToken idToken = googleOidcClient.exchangeCode(code);
+        userStore.upsertGoogleUser(idToken);
         String authCode = authorizationCodeService.issueCode(
                 record.getClientId(),
                 record.getRedirectUri(),
