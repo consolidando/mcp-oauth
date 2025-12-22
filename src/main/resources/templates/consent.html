@@ -18,10 +18,10 @@
   </head>
   <body>
     <div class="card">
-      <div class="title">{brandName} wants to access your account</div>
+      <div class="title">{brandName} vol accedir a la teva compta</div>
       <div class="meta">Client: {clientId}</div>
-      <div class="meta">Resource: {resource}</div>
-      <div class="scope">Scope: {scope}</div>
+      <div class="meta">Recurs: {resource}</div>
+      <div class="scope">Àmbits: {scope}</div>
       <form method="post" action="/oauth/consent">
         <input type="hidden" name="state" value="{state}">
         <div class="actions">

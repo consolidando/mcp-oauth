@@ -32,6 +32,9 @@ public class KeyMaterialService {
     @ConfigProperty(name = "emp.oauth.public-key-path")
     Optional<String> publicKeyPath;
 
+    @ConfigProperty(name = "emp.oauth.public-key-secret")
+    Optional<String> publicKeySecret;
+
     @ConfigProperty(name = "emp.oauth.private-key-secret")
     Optional<String> privateKeySecret;
 
@@ -39,14 +42,7 @@ public class KeyMaterialService {
     Optional<String> privateKeyPath;
 
     public ECPublicKey publicKey() {
-        String pemPath = publicKeyPath.orElseThrow(
-                () -> new IllegalStateException("emp.oauth.public-key-path is not configured"));
-        String pem;
-        try {
-            pem = Files.readString(Path.of(pemPath), StandardCharsets.US_ASCII);
-        } catch (IOException e) {
-            throw new IllegalStateException("Unable to read public key from " + pemPath, e);
-        }
+        String pem = loadPublicKeyPem();
         String base64 = pem
                 .replace("-----BEGIN PUBLIC KEY-----", "")
                 .replace("-----END PUBLIC KEY-----", "")
@@ -58,6 +54,36 @@ public class KeyMaterialService {
             return (ECPublicKey) key;
         } catch (InvalidKeySpecException | java.security.NoSuchAlgorithmException e) {
             throw new IllegalStateException("Invalid EC public key", e);
+        }
+    }
+
+    private String loadPublicKeyPem() {
+        if (publicKeySecret.isPresent()) {
+            return loadFromSecretManager(publicKeySecret.get());
+        }
+        if (publicKeyPath.isPresent()) {
+            String pemPath = publicKeyPath.get();
+            if (pemPath.startsWith("classpath:")) {
+                return loadFromClasspath(pemPath.substring("classpath:".length()));
+            }
+            try {
+                return Files.readString(Path.of(pemPath), StandardCharsets.US_ASCII);
+            } catch (IOException e) {
+                throw new IllegalStateException("Unable to read public key from " + pemPath, e);
+            }
+        }
+        throw new IllegalStateException("emp.oauth.public-key-secret or emp.oauth.public-key-path must be configured");
+    }
+
+    private String loadFromClasspath(String resourcePath) {
+        String normalized = resourcePath.startsWith("/") ? resourcePath.substring(1) : resourcePath;
+        try (var stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(normalized)) {
+            if (stream == null) {
+                throw new IllegalStateException("Classpath resource not found: " + resourcePath);
+            }
+            return new String(stream.readAllBytes(), StandardCharsets.US_ASCII);
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to read classpath resource " + resourcePath, e);
         }
     }
 

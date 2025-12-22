@@ -4,6 +4,7 @@
     <groupId>com.emp</groupId>
     <artifactId>oauth</artifactId>
     <version>1.0.0-SNAPSHOT</version>
+    <name>EMP-OAUTH</name>
 
     <properties>
         <compiler-plugin.version>3.14.1</compiler-plugin.version>
@@ -189,4 +190,5 @@
             </properties>
         </profile>
     </profiles>
+    
 </project>
