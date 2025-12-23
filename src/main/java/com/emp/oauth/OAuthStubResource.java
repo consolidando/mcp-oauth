@@ -20,9 +20,12 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
 
 @Path("/")
 public class OAuthStubResource {
+
+    private static final Logger LOG = Logger.getLogger(OAuthStubResource.class);
 
     @Inject
     JwksService jwksService;
@@ -222,11 +225,25 @@ public class OAuthStubResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response register(ClientRegistrationRequest request) {
+        if (request != null) {
+            LOG.infof("DCR request client_name=%s token_endpoint_auth_method=%s redirect_uris=%s scope=%s",
+                    request.getClientName(),
+                    request.getTokenEndpointAuthMethod(),
+                    request.getRedirectUris(),
+                    request.getScope());
+        } else {
+            LOG.info("DCR request with empty body");
+        }
         if (request == null || request.getRedirectUris() == null || request.getRedirectUris().isEmpty()) {
             return error(Response.Status.BAD_REQUEST, "invalid_request", "redirect_uris is required");
         }
         String authMethod = request.getTokenEndpointAuthMethod();
         if (authMethod == null || authMethod.isBlank()) {
+            authMethod = "none";
+        } else {
+            authMethod = authMethod.trim().toLowerCase(java.util.Locale.ROOT);
+        }
+        if ("client_secret_basic".equals(authMethod) || "client_secret_post".equals(authMethod)) {
             authMethod = "none";
         }
         if (!"none".equals(authMethod)) {
@@ -248,7 +265,9 @@ public class OAuthStubResource {
         response.setClientName(record.getClientName());
         response.setRedirectUris(record.getRedirectUris());
         response.setTokenEndpointAuthMethod(record.getTokenEndpointAuthMethod());
-        response.setScope(request.getScope());
+        if (request.getScope() != null && !request.getScope().isBlank()) {
+            response.setScope(request.getScope());
+        }
         return Response.status(Response.Status.CREATED).entity(response).build();
     }
 
