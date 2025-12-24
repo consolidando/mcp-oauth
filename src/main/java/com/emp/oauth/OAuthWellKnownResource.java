@@ -45,6 +45,9 @@ public class OAuthWellKnownResource {
         body.put("token_endpoint", tokenEndpoint.orElse(base + "/oauth/token"));
         body.put("registration_endpoint", registrationEndpoint.orElse(base + "/oauth/register"));
         body.put("jwks_uri", jwksUri.orElse(base + "/jwks.json"));
+        body.put("response_types_supported", new String[] { "code" });
+        body.put("grant_types_supported", new String[] { "authorization_code" });
+        body.put("token_endpoint_auth_methods_supported", new String[] { "none" });
         body.put("code_challenge_methods_supported", new String[] { "S256" });
         scopesSupported.map(this::splitScopes).ifPresent(scopes -> body.put("scopes_supported", scopes));
         return Response.ok(body).build();
