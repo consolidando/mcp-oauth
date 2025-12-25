@@ -45,6 +45,9 @@ public class OAuthStubResource {
     @Inject
     AuthorizationCodeService authorizationCodeService;
 
+    @Inject
+    FirestoreUserStore userStore;
+
     @ConfigProperty(name = "emp.oauth.test-user-id")
     java.util.Optional<String> testUserId;
 
@@ -205,11 +208,22 @@ public class OAuthStubResource {
         if (audience == null || audience.isBlank()) {
             return error(Response.Status.BAD_REQUEST, "invalid_request", "resource is required");
         }
+        String email = null;
+        try {
+            email = userStore.findEmail(record.getUserId()).orElse(null);
+        } catch (IllegalStateException ex) {
+            LOG.warnf("Unable to load user email for %s: %s", record.getUserId(), ex.getMessage());
+        }
+        if ((email == null || email.isBlank()) && record.getUserId() != null
+                && record.getUserId().contains("@")) {
+            email = record.getUserId();
+        }
         String accessToken = jwtService.issueAccessToken(
                 record.getUserId(),
                 audience,
                 record.getScope(),
-                record.getClientId());
+                record.getClientId(),
+                email);
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("access_token", accessToken);
         body.put("token_type", "Bearer");
