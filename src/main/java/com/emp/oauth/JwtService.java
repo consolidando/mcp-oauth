@@ -41,6 +41,10 @@ public class JwtService {
     ObjectMapper objectMapper;
 
     public String issueAccessToken(String subject, String audience, String scope, String clientId) {
+        return issueAccessToken(subject, audience, scope, clientId, null);
+    }
+
+    public String issueAccessToken(String subject, String audience, String scope, String clientId, String email) {
         Instant now = Instant.now();
         Map<String, Object> header = new LinkedHashMap<>();
         header.put("alg", "ES256");
@@ -57,6 +61,9 @@ public class JwtService {
             payload.put("scope", scope);
         }
         payload.put("client_id", clientId);
+        if (email != null && !email.isBlank()) {
+            payload.put("email", email);
+        }
 
         try {
             String headerPart = base64Url(objectMapper.writeValueAsBytes(header));
