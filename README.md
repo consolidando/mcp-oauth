@@ -6,15 +6,16 @@ Minimal OAuth 2.0 authorization server for MCP clients, built with Quarkus. It s
 
 - Dynamic client registration (DCR)
 - Authorization code + PKCE (S256)
+- Refresh tokens with rotation
 - ES256 access tokens with JWKS publication
 - Google OIDC login
-- Firestore persistence for users, clients, auth requests, and auth codes
+- Firestore persistence for users, clients, auth requests, auth codes, and refresh tokens
 
 This service is designed to run as a standalone auth server, separate from your API and MCP server. It targets Google Cloud (Cloud Run + Firestore) out of the box.
 
 ## Environment configuration
 
-Copy `.env.example` to `.env` and fill in the real values. The `.env` file is not committed.
+`.env.example` lists the environment variables used by this project that are not in the repo. Copy it to `.env` and fill in real values. How you load `.env` depends on your operating system. The `.env` file is not committed. The `.bat` helpers used to set the environment or deploy are examples and must be adapted to your system.
 
 ### Core OAuth
 
@@ -23,6 +24,7 @@ Copy `.env.example` to `.env` and fill in the real values. The `.env` file is no
 - `EMP_OAUTH_AUTH_CODE_TTL_SECONDS`: Auth code lifetime in seconds.
 - `EMP_OAUTH_AUTH_REQUEST_TTL_SECONDS`: Pending auth request lifetime in seconds.
 - `EMP_OAUTH_ACCESS_TOKEN_TTL_SECONDS`: Access token lifetime in seconds.
+- `EMP_OAUTH_REFRESH_TOKEN_TTL_SECONDS`: Refresh token lifetime in seconds.
 - `EMP_OAUTH_AUTO_CONSENT`: If `true`, skip the consent screen after login.
 - `EMP_OAUTH_CONSENT_BRAND_NAME`: Brand text shown on the consent page.
 
@@ -50,6 +52,7 @@ Copy `.env.example` to `.env` and fill in the real values. The `.env` file is no
 - `EMP_OAUTH_FIRESTORE_CLIENTS_COLLECTION`: Clients collection name.
 - `EMP_OAUTH_FIRESTORE_AUTH_CODES_COLLECTION`: Auth codes collection name.
 - `EMP_OAUTH_FIRESTORE_AUTH_REQUESTS_COLLECTION`: Auth requests collection name.
+- `EMP_OAUTH_FIRESTORE_REFRESH_TOKENS_COLLECTION`: Refresh tokens collection name.
 
 ### Deployment helpers (optional)
 
