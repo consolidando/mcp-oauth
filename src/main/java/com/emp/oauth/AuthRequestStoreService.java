@@ -49,4 +49,11 @@ public class AuthRequestStoreService {
         }
         inMemoryAuthRequestStore.updateUserId(id, userId);
     }
+
+    public int cleanupExpired(java.time.Instant now) {
+        if (firestoreEnabled) {
+            return firestoreAuthRequestStore.cleanupExpired(now);
+        }
+        return inMemoryAuthRequestStore.cleanupExpired(now);
+    }
 }

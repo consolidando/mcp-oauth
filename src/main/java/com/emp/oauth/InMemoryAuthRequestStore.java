@@ -41,4 +41,15 @@ public class InMemoryAuthRequestStore {
                 existing.getExpiresAt());
         requests.put(id, updated);
     }
+
+    public int cleanupExpired(java.time.Instant now) {
+        int removed = 0;
+        for (var entry : requests.entrySet()) {
+            if (entry.getValue().getExpiresAt().isBefore(now)) {
+                requests.remove(entry.getKey());
+                removed++;
+            }
+        }
+        return removed;
+    }
 }

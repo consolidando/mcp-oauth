@@ -39,4 +39,19 @@ public class InMemoryClientStore {
                 lastUsedAt);
         clients.put(clientId, updated);
     }
+
+    public int cleanupInactive(java.time.Instant cutoff) {
+        int removed = 0;
+        for (var entry : clients.entrySet()) {
+            ClientRecord record = entry.getValue();
+            java.time.Instant lastUsedAt = record.getLastUsedAt() == null
+                    ? record.getCreatedAt()
+                    : record.getLastUsedAt();
+            if (lastUsedAt.isBefore(cutoff)) {
+                clients.remove(entry.getKey());
+                removed++;
+            }
+        }
+        return removed;
+    }
 }

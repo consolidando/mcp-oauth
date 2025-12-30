@@ -48,4 +48,11 @@ public class ClientStoreService {
         }
         inMemoryClientStore.updateLastUsedAt(clientId, lastUsedAt);
     }
+
+    public int cleanupInactive(java.time.Instant cutoff) {
+        if (firestoreEnabled) {
+            return firestoreClientStore.cleanupInactive(cutoff);
+        }
+        return inMemoryClientStore.cleanupInactive(cutoff);
+    }
 }
