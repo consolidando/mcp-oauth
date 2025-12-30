@@ -64,84 +64,23 @@ This service is designed to run as a standalone auth server, separate from your 
 - `EMP_IMAGE_NAME`: Docker image name.
 - `EMP_IMAGE_TAG`: Docker image tag.
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+## Deploy steps (native)
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+- Set GCP project
+  `gcloud config set project %PROJECT_ID%`
+- Build native binary
+  `.\mvnw.cmd package -Dnative -DskipTests -Dquarkus.native.container-build=true`
+- Build Docker image
+  `docker build -f src/main/docker/Dockerfile.native -t %REGION%-docker.pkg.dev/%PROJECT_ID%/%REPO_NAME%/%IMAGE_NAME%:%IMAGE_TAG% .`
+- Push Docker image
+  `docker push %REGION%-docker.pkg.dev/%PROJECT_ID%/%REPO_NAME%/%IMAGE_NAME%:%IMAGE_TAG%`
+- Deploy to Cloud Run
+  `gcloud run deploy %SERVICE_NAME% --image %REGION%-docker.pkg.dev/%PROJECT_ID%/%REPO_NAME%/%IMAGE_NAME%:%IMAGE_TAG% --region %REGION% --platform managed --allow-unauthenticated --env-vars-file env-vars.yaml`
 
-## Running the application in dev mode
 
-You can run your application in dev mode that enables live coding using:
 
-```shell script
-./mvnw quarkus:dev
-```
+## References
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
-
-## Cleanup endpoint
-
-For cron-driven cleanup, call `POST /oauth/cleanup`. It removes expired auth requests, used/expired auth codes and refresh tokens, and clients inactive for the configured number of days.
-
-## Packaging and running the application
-
-The application can be packaged using:
-
-```shell script
-./mvnw package
-```
-
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
-
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
-
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
-```
-
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
-
-## Creating a native executable
-
-You can create a native executable using:
-
-```shell script
-./mvnw package -Dnative
-```
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
-
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
-```
-
-You can then execute your native executable with: `./target/oauth-1.0.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
-
-## Related Guides
-
-- SmallRye JWT Build ([guide](https://quarkus.io/guides/security-jwt-build)): Create JSON Web Token with SmallRye JWT Build API
-- SmallRye OpenAPI ([guide](https://quarkus.io/guides/openapi-swaggerui)): Document your REST APIs with OpenAPI - comes with Swagger UI
-- SmallRye Health ([guide](https://quarkus.io/guides/smallrye-health)): Monitor service health
-- REST ([guide](https://quarkus.io/guides/rest)): A Jakarta REST implementation utilizing build time processing and Vert.x. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on it.
-- REST Jackson ([guide](https://quarkus.io/guides/rest#json-serialisation)): Jackson serialization support for Quarkus REST. This extension is not compatible with the quarkus-resteasy extension, or any of the extensions that depend on it
-- Qute ([guide](https://quarkus.io/guides/qute)): Offer templating support for web, email, etc in a build time, type-safe way
-- Hibernate Validator ([guide](https://quarkus.io/guides/validation)): Validate object properties (field, getter) and method parameters for your beans (REST, CDI, Jakarta Persistence)
-- Google Cloud Firestore ([guide](https://quarkiverse.github.io/quarkiverse-docs/quarkus-google-cloud-services/main/firestore.html)): Use Google Cloud Firestore NOSQL database service
-
-## Provided Code
-
-### REST
-
-Easily start your REST Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
-
-### SmallRye Health
-
-Monitor your application's health using SmallRye Health
-
-[Related guide section...](https://quarkus.io/guides/smallrye-health)
+- OpenAI Apps SDK Auth: <https://developers.openai.com/apps-sdk/build/auth/>
+- MCP Authorization Specification: <https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization>
+- MCP Inspector Tooling: <https://modelcontextprotocol.io/docs/tools/inspector>
