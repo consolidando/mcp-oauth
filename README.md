@@ -105,3 +105,7 @@ Call `POST /oauth/cleanup` from a cron job to remove expired auth requests, used
 - OpenAI Apps SDK Auth: <https://developers.openai.com/apps-sdk/build/auth/>
 - MCP Authorization Specification: <https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization>
 - MCP Inspector Tooling: <https://modelcontextprotocol.io/docs/tools/inspector>
+
+## ⚖ License
+
+This project is licensed under the [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/) License. See the [LICENSE](LICENSE.md) file for details.
