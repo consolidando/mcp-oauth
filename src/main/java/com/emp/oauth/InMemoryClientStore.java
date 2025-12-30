@@ -24,4 +24,19 @@ public class InMemoryClientStore {
                 .map(client -> client.getRedirectUris().contains(redirectUri))
                 .orElse(false);
     }
+
+    public void updateLastUsedAt(String clientId, java.time.Instant lastUsedAt) {
+        ClientRecord existing = clients.get(clientId);
+        if (existing == null) {
+            return;
+        }
+        ClientRecord updated = new ClientRecord(
+                existing.getClientId(),
+                existing.getClientName(),
+                existing.getRedirectUris(),
+                existing.getTokenEndpointAuthMethod(),
+                existing.getCreatedAt(),
+                lastUsedAt);
+        clients.put(clientId, updated);
+    }
 }

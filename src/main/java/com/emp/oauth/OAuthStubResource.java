@@ -109,6 +109,7 @@ public class OAuthStubResource {
         if (!"S256".equals(codeChallengeMethod)) {
             return redirectError(redirectUri, "invalid_request", "code_challenge_method must be S256", state);
         }
+        clientStore.updateLastUsedAt(clientId, Instant.now());
         String userId = testUserId.orElse(null);
         if (userId == null || userId.isBlank()) {
             AuthRequestRecord request = new AuthRequestRecord(
@@ -189,6 +190,7 @@ public class OAuthStubResource {
             if (!clientId.equals(record.getClientId())) {
                 return error(Response.Status.BAD_REQUEST, "invalid_grant", "client_id does not match");
             }
+            clientStore.updateLastUsedAt(clientId, Instant.now());
             if (redirectUri == null || !redirectUri.equals(record.getRedirectUri())) {
                 return error(Response.Status.BAD_REQUEST, "invalid_grant", "redirect_uri does not match");
             }
@@ -261,6 +263,7 @@ public class OAuthStubResource {
             if (!clientId.equals(record.getClientId())) {
                 return error(Response.Status.BAD_REQUEST, "invalid_grant", "client_id does not match");
             }
+            clientStore.updateLastUsedAt(clientId, Instant.now());
             if (record.getUsedAt() != null) {
                 return error(Response.Status.BAD_REQUEST, "invalid_grant", "refresh token was already used");
             }
@@ -345,7 +348,8 @@ public class OAuthStubResource {
                 request.getClientName(),
                 request.getRedirectUris(),
                 authMethod,
-                java.time.Instant.now());
+                java.time.Instant.now(),
+                null);
         clientStore.save(record);
 
         ClientRegistrationResponse response = new ClientRegistrationResponse();

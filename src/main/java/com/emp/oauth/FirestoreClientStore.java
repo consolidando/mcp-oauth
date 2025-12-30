@@ -36,6 +36,10 @@ public class FirestoreClientStore {
             data.put("tokenEndpointAuthMethod", client.getTokenEndpointAuthMethod());
         }
         data.put("createdAt", Timestamp.ofTimeSecondsAndNanos(createdAt.getEpochSecond(), createdAt.getNano()));
+        if (client.getLastUsedAt() != null) {
+            data.put("lastUsedAt", Timestamp.ofTimeSecondsAndNanos(
+                    client.getLastUsedAt().getEpochSecond(), client.getLastUsedAt().getNano()));
+        }
         data.put("status", "active");
         try {
             firestore.collection(clientsCollection)
@@ -62,7 +66,11 @@ public class FirestoreClientStore {
             Instant createdAt = Optional.ofNullable(snapshot.getTimestamp("createdAt"))
                     .map(ts -> Instant.ofEpochSecond(ts.getSeconds(), ts.getNanos()))
                     .orElse(Instant.now());
-            return Optional.of(new ClientRecord(clientId, name, redirectUris, tokenEndpointAuthMethod, createdAt));
+            Instant lastUsedAt = Optional.ofNullable(snapshot.getTimestamp("lastUsedAt"))
+                    .map(ts -> Instant.ofEpochSecond(ts.getSeconds(), ts.getNanos()))
+                    .orElse(null);
+            return Optional.of(new ClientRecord(clientId, name, redirectUris, tokenEndpointAuthMethod, createdAt,
+                    lastUsedAt));
         } catch (Exception e) {
             throw new IllegalStateException("Failed to load client from Firestore", e);
         }
@@ -72,5 +80,17 @@ public class FirestoreClientStore {
         return findById(clientId)
                 .map(client -> client.getRedirectUris().contains(redirectUri))
                 .orElse(false);
+    }
+
+    public void updateLastUsedAt(String clientId, Instant lastUsedAt) {
+        try {
+            firestore.collection(clientsCollection)
+                    .document(clientId)
+                    .set(Map.of("lastUsedAt", Timestamp.ofTimeSecondsAndNanos(
+                            lastUsedAt.getEpochSecond(), lastUsedAt.getNano())), SetOptions.merge())
+                    .get();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to update client lastUsedAt", e);
+        }
     }
 }

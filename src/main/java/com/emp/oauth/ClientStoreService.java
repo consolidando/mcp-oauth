@@ -40,4 +40,12 @@ public class ClientStoreService {
         }
         return inMemoryClientStore.isRedirectUriAllowed(clientId, redirectUri);
     }
+
+    public void updateLastUsedAt(String clientId, java.time.Instant lastUsedAt) {
+        if (firestoreEnabled) {
+            firestoreClientStore.updateLastUsedAt(clientId, lastUsedAt);
+            return;
+        }
+        inMemoryClientStore.updateLastUsedAt(clientId, lastUsedAt);
+    }
 }

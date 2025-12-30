@@ -10,14 +10,16 @@ public class ClientRecord {
     private final List<String> redirectUris;
     private final String tokenEndpointAuthMethod;
     private final Instant createdAt;
+    private final Instant lastUsedAt;
 
     public ClientRecord(String clientId, String clientName, List<String> redirectUris,
-            String tokenEndpointAuthMethod, Instant createdAt) {
+            String tokenEndpointAuthMethod, Instant createdAt, Instant lastUsedAt) {
         this.clientId = clientId;
         this.clientName = clientName;
         this.redirectUris = redirectUris;
         this.tokenEndpointAuthMethod = tokenEndpointAuthMethod;
         this.createdAt = createdAt;
+        this.lastUsedAt = lastUsedAt;
     }
 
     public String getClientId() {
@@ -38,5 +40,9 @@ public class ClientRecord {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public Instant getLastUsedAt() {
+        return lastUsedAt;
     }
 }
