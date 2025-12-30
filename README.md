@@ -69,35 +69,35 @@ This service is designed to run as a standalone auth server, separate from your 
 ### Set GCP project
 
 ```bash
-  `gcloud config set project %PROJECT_ID%`
+  gcloud config set project %PROJECT_ID%
 ```  
 ### Build native binary
 
 ```bash
-  `.\mvnw.cmd package -Dnative -DskipTests -Dquarkus.native.container-build=true`
+  .\mvnw.cmd package -Dnative -DskipTests -Dquarkus.native.container-build=true
 ```  
 
 ### Build Docker image
 
 ```bash
-  `docker build -f src/main/docker/Dockerfile.native -t %REGION%-docker.pkg.dev/%PROJECT_ID%/%REPO_NAME%/%IMAGE_NAME%:%IMAGE_TAG% .`
+  docker build -f src/main/docker/Dockerfile.native -t %REGION%-docker.pkg.dev/%PROJECT_ID%/%REPO_NAME%/%IMAGE_NAME%:%IMAGE_TAG% .
 ```  
 
 ### Push Docker image
 
 ```bash
-  `docker push %REGION%-docker.pkg.dev/%PROJECT_ID%/%REPO_NAME%/%IMAGE_NAME%:%IMAGE_TAG%`
+  docker push %REGION%-docker.pkg.dev/%PROJECT_ID%/%REPO_NAME%/%IMAGE_NAME%:%IMAGE_TAG%
 ```  
 
 ### Deploy to Cloud Run
 
 ```bash
-  `gcloud run deploy %SERVICE_NAME% --image %REGION%-docker.pkg.dev/%PROJECT_ID%/%REPO_NAME%/%IMAGE_NAME%:%IMAGE_TAG% --region %REGION% --platform managed --allow-unauthenticated --env-vars-file env-vars.yaml`
+  gcloud run deploy %SERVICE_NAME% --image %REGION%-docker.pkg.dev/%PROJECT_ID%/%REPO_NAME%/%IMAGE_NAME%:%IMAGE_TAG% --region %REGION% --platform managed --allow-unauthenticated --env-vars-file env-vars.yaml
 ```    
 
 ## 🧹 Cleanup endpoint
 
-Call `POST /oauth/cleanup` from a cron job to remove expired auth requests, used/expired auth codes and refresh tokens, and clients inactive for the configured number of days.  
+Call `POST /oauth/cleanup` from a scheduled job to remove expired auth requests, used/expired auth codes and refresh tokens, and clients inactive for the configured number of days.  
 
 
 ## 📎 References
