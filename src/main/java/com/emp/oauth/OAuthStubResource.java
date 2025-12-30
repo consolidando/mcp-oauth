@@ -48,6 +48,12 @@ public class OAuthStubResource {
     @Inject
     FirestoreUserStore userStore;
 
+    @Inject
+    RefreshTokenService refreshTokenService;
+
+    @Inject
+    RefreshTokenStoreService refreshTokenStoreService;
+
     @ConfigProperty(name = "emp.oauth.test-user-id")
     java.util.Optional<String> testUserId;
 
@@ -164,74 +170,143 @@ public class OAuthStubResource {
             @FormParam("code") String code,
             @FormParam("redirect_uri") String redirectUri,
             @FormParam("client_id") String clientId,
-            @FormParam("code_verifier") String codeVerifier) {
-        if (!"authorization_code".equals(grantType)) {
-            return error(Response.Status.BAD_REQUEST, "unsupported_grant_type", "grant_type must be authorization_code");
+            @FormParam("code_verifier") String codeVerifier,
+            @FormParam("refresh_token") String refreshToken) {
+        if (grantType == null || grantType.isBlank()) {
+            return error(Response.Status.BAD_REQUEST, "invalid_request", "grant_type is required");
         }
-        if (code == null || code.isBlank()) {
-            return error(Response.Status.BAD_REQUEST, "invalid_request", "code is required");
+        if ("authorization_code".equals(grantType)) {
+            if (code == null || code.isBlank()) {
+                return error(Response.Status.BAD_REQUEST, "invalid_request", "code is required");
+            }
+            if (clientId == null || clientId.isBlank()) {
+                return error(Response.Status.BAD_REQUEST, "invalid_request", "client_id is required");
+            }
+            AuthorizationCodeRecord record = codeStoreService.find(code).orElse(null);
+            if (record == null) {
+                return error(Response.Status.BAD_REQUEST, "invalid_grant", "code is invalid");
+            }
+            if (!clientId.equals(record.getClientId())) {
+                return error(Response.Status.BAD_REQUEST, "invalid_grant", "client_id does not match");
+            }
+            if (redirectUri == null || !redirectUri.equals(record.getRedirectUri())) {
+                return error(Response.Status.BAD_REQUEST, "invalid_grant", "redirect_uri does not match");
+            }
+            if (record.getUsedAt() != null) {
+                return error(Response.Status.BAD_REQUEST, "invalid_grant", "code was already used");
+            }
+            if (Instant.now().isAfter(record.getExpiresAt())) {
+                return error(Response.Status.BAD_REQUEST, "invalid_grant", "code has expired");
+            }
+            if (codeVerifier == null || codeVerifier.isBlank()) {
+                return error(Response.Status.BAD_REQUEST, "invalid_request", "code_verifier is required");
+            }
+            if (!"S256".equals(record.getCodeChallengeMethod())) {
+                return error(Response.Status.BAD_REQUEST, "invalid_grant", "unsupported code_challenge_method");
+            }
+            if (!verifyPkce(codeVerifier, record.getCodeChallenge())) {
+                return error(Response.Status.BAD_REQUEST, "invalid_grant", "code_verifier is invalid");
+            }
+            record.markUsed(Instant.now());
+            codeStoreService.markUsed(record.getCode());
+            String audience = record.getResource();
+            if (audience == null || audience.isBlank()) {
+                audience = defaultResource.orElse(null);
+            }
+            if (audience == null || audience.isBlank()) {
+                return error(Response.Status.BAD_REQUEST, "invalid_request", "resource is required");
+            }
+            String email = null;
+            try {
+                email = userStore.findEmail(record.getUserId()).orElse(null);
+            } catch (IllegalStateException ex) {
+                LOG.warnf("Unable to load user email for %s: %s", record.getUserId(), ex.getMessage());
+            }
+            if ((email == null || email.isBlank()) && record.getUserId() != null
+                    && record.getUserId().contains("@")) {
+                email = record.getUserId();
+            }
+            String accessToken = jwtService.issueAccessToken(
+                    record.getUserId(),
+                    audience,
+                    record.getScope(),
+                    record.getClientId(),
+                    email);
+            String newRefreshToken = refreshTokenService.issueToken(
+                    record.getClientId(),
+                    record.getUserId(),
+                    record.getScope(),
+                    audience);
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("access_token", accessToken);
+            body.put("token_type", "Bearer");
+            body.put("expires_in", jwtService.getAccessTokenTtlSeconds());
+            body.put("refresh_token", newRefreshToken);
+            if (record.getScope() != null && !record.getScope().isBlank()) {
+                body.put("scope", record.getScope());
+            }
+            return Response.ok(body).build();
         }
-        if (clientId == null || clientId.isBlank()) {
-            return error(Response.Status.BAD_REQUEST, "invalid_request", "client_id is required");
+        if ("refresh_token".equals(grantType)) {
+            if (refreshToken == null || refreshToken.isBlank()) {
+                return error(Response.Status.BAD_REQUEST, "invalid_request", "refresh_token is required");
+            }
+            if (clientId == null || clientId.isBlank()) {
+                return error(Response.Status.BAD_REQUEST, "invalid_request", "client_id is required");
+            }
+            RefreshTokenRecord record = refreshTokenStoreService.find(refreshToken).orElse(null);
+            if (record == null) {
+                return error(Response.Status.BAD_REQUEST, "invalid_grant", "refresh token is invalid");
+            }
+            if (!clientId.equals(record.getClientId())) {
+                return error(Response.Status.BAD_REQUEST, "invalid_grant", "client_id does not match");
+            }
+            if (record.getUsedAt() != null) {
+                return error(Response.Status.BAD_REQUEST, "invalid_grant", "refresh token was already used");
+            }
+            if (Instant.now().isAfter(record.getExpiresAt())) {
+                return error(Response.Status.BAD_REQUEST, "invalid_grant", "refresh token has expired");
+            }
+            String audience = record.getResource();
+            if (audience == null || audience.isBlank()) {
+                audience = defaultResource.orElse(null);
+            }
+            if (audience == null || audience.isBlank()) {
+                return error(Response.Status.BAD_REQUEST, "invalid_request", "resource is required");
+            }
+            String email = null;
+            try {
+                email = userStore.findEmail(record.getUserId()).orElse(null);
+            } catch (IllegalStateException ex) {
+                LOG.warnf("Unable to load user email for %s: %s", record.getUserId(), ex.getMessage());
+            }
+            if ((email == null || email.isBlank()) && record.getUserId() != null
+                    && record.getUserId().contains("@")) {
+                email = record.getUserId();
+            }
+            String accessToken = jwtService.issueAccessToken(
+                    record.getUserId(),
+                    audience,
+                    record.getScope(),
+                    record.getClientId(),
+                    email);
+            String newRefreshToken = refreshTokenService.issueToken(
+                    record.getClientId(),
+                    record.getUserId(),
+                    record.getScope(),
+                    audience);
+            refreshTokenStoreService.markUsed(refreshToken, newRefreshToken);
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("access_token", accessToken);
+            body.put("token_type", "Bearer");
+            body.put("expires_in", jwtService.getAccessTokenTtlSeconds());
+            body.put("refresh_token", newRefreshToken);
+            if (record.getScope() != null && !record.getScope().isBlank()) {
+                body.put("scope", record.getScope());
+            }
+            return Response.ok(body).build();
         }
-        AuthorizationCodeRecord record = codeStoreService.find(code).orElse(null);
-        if (record == null) {
-            return error(Response.Status.BAD_REQUEST, "invalid_grant", "code is invalid");
-        }
-        if (!clientId.equals(record.getClientId())) {
-            return error(Response.Status.BAD_REQUEST, "invalid_grant", "client_id does not match");
-        }
-        if (redirectUri == null || !redirectUri.equals(record.getRedirectUri())) {
-            return error(Response.Status.BAD_REQUEST, "invalid_grant", "redirect_uri does not match");
-        }
-        if (record.getUsedAt() != null) {
-            return error(Response.Status.BAD_REQUEST, "invalid_grant", "code was already used");
-        }
-        if (Instant.now().isAfter(record.getExpiresAt())) {
-            return error(Response.Status.BAD_REQUEST, "invalid_grant", "code has expired");
-        }
-        if (codeVerifier == null || codeVerifier.isBlank()) {
-            return error(Response.Status.BAD_REQUEST, "invalid_request", "code_verifier is required");
-        }
-        if (!"S256".equals(record.getCodeChallengeMethod())) {
-            return error(Response.Status.BAD_REQUEST, "invalid_grant", "unsupported code_challenge_method");
-        }
-        if (!verifyPkce(codeVerifier, record.getCodeChallenge())) {
-            return error(Response.Status.BAD_REQUEST, "invalid_grant", "code_verifier is invalid");
-        }
-        record.markUsed(Instant.now());
-        codeStoreService.markUsed(record.getCode());
-        String audience = record.getResource();
-        if (audience == null || audience.isBlank()) {
-            audience = defaultResource.orElse(null);
-        }
-        if (audience == null || audience.isBlank()) {
-            return error(Response.Status.BAD_REQUEST, "invalid_request", "resource is required");
-        }
-        String email = null;
-        try {
-            email = userStore.findEmail(record.getUserId()).orElse(null);
-        } catch (IllegalStateException ex) {
-            LOG.warnf("Unable to load user email for %s: %s", record.getUserId(), ex.getMessage());
-        }
-        if ((email == null || email.isBlank()) && record.getUserId() != null
-                && record.getUserId().contains("@")) {
-            email = record.getUserId();
-        }
-        String accessToken = jwtService.issueAccessToken(
-                record.getUserId(),
-                audience,
-                record.getScope(),
-                record.getClientId(),
-                email);
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("access_token", accessToken);
-        body.put("token_type", "Bearer");
-        body.put("expires_in", jwtService.getAccessTokenTtlSeconds());
-        if (record.getScope() != null && !record.getScope().isBlank()) {
-            body.put("scope", record.getScope());
-        }
-        return Response.ok(body).build();
+        return error(Response.Status.BAD_REQUEST, "unsupported_grant_type", "unsupported grant_type");
     }
 
     @POST
