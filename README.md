@@ -78,6 +78,10 @@ This service is designed to run as a standalone auth server, separate from your 
   `gcloud run deploy %SERVICE_NAME% --image %REGION%-docker.pkg.dev/%PROJECT_ID%/%REPO_NAME%/%IMAGE_NAME%:%IMAGE_TAG% --region %REGION% --platform managed --allow-unauthenticated --env-vars-file env-vars.yaml`
 
 
+## 🧹 Cleanup endpoint
+
+Call `POST /oauth/cleanup` from a cron job to remove expired auth requests, used/expired auth codes and refresh tokens, and clients inactive for the configured number of days.  
+
 
 ## 📎 References
 
