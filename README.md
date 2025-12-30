@@ -1,6 +1,6 @@
 # oauth 😎
 
-## Overview
+## [i] Overview
 
 Minimal OAuth 2.0 authorization server for MCP clients, built with Quarkus. It supports:
 
@@ -13,11 +13,11 @@ Minimal OAuth 2.0 authorization server for MCP clients, built with Quarkus. It s
 
 This service is designed to run as a standalone auth server, separate from your API and MCP server. It targets Google Cloud (Cloud Run + Firestore) out of the box.
 
-## Environment configuration
+## [env] Environment configuration
 
 `.env.example` lists the environment variables used by this project that are not in the repo. Copy it to `.env` and fill in real values. How you load `.env` depends on your operating system. The `.env` file is not committed. The `.bat` helpers used to set the environment or deploy are examples and must be adapted to your system.
 
-### Core OAuth
+### [auth] Core OAuth
 
 - `EMP_OAUTH_ISSUER`: Public issuer URL for this auth server.
 - `EMP_OAUTH_DEFAULT_RESOURCE`: Default resource/audience if none is provided.
@@ -29,14 +29,14 @@ This service is designed to run as a standalone auth server, separate from your 
 - `EMP_OAUTH_CONSENT_BRAND_NAME`: Brand text shown on the consent page.
 - `EMP_OAUTH_CLEANUP_CLIENTS_INACTIVE_DAYS`: Days of inactivity before cleanup removes a client.
 
-### Keys and JWKS (ES256)
+### [key] Keys and JWKS (ES256)
 
 - `EMP_OAUTH_PUBLIC_KEY_PATH`: Path to the ES256 public key PEM.
 - `EMP_OAUTH_PRIVATE_KEY_SECRET`: Secret Manager resource for the ES256 private key.
 - `EMP_OAUTH_PRIVATE_KEY_PATH`: Local fallback for the ES256 private key PEM.
 - `EMP_OAUTH_KEY_ID`: `kid` for JWKS and JWT headers.
 
-### Google OIDC
+### [g] Google OIDC
 
 - `EMP_GOOGLE_CLIENT_ID`: OAuth client ID.
 - `EMP_GOOGLE_CLIENT_SECRET`: OAuth client secret.
@@ -46,7 +46,7 @@ This service is designed to run as a standalone auth server, separate from your 
 - `EMP_GOOGLE_JWKS_URI`: Google JWKS endpoint.
 - `EMP_GOOGLE_SCOPE`: OAuth scopes for login.
 
-### Firestore
+### [db] Firestore
 
 - `EMP_OAUTH_FIRESTORE_ENABLED`: Enable Firestore-backed stores.
 - `EMP_OAUTH_FIRESTORE_USERS_COLLECTION`: Users collection name.
@@ -55,7 +55,7 @@ This service is designed to run as a standalone auth server, separate from your 
 - `EMP_OAUTH_FIRESTORE_AUTH_REQUESTS_COLLECTION`: Auth requests collection name.
 - `EMP_OAUTH_FIRESTORE_REFRESH_TOKENS_COLLECTION`: Refresh tokens collection name.
 
-### Deployment helpers (optional)
+### [deploy] Deployment helpers (optional)
 
 - `EMP_PROJECT_ID`: GCP project id.
 - `EMP_REGION`: Cloud Run region.
@@ -64,7 +64,7 @@ This service is designed to run as a standalone auth server, separate from your 
 - `EMP_IMAGE_NAME`: Docker image name.
 - `EMP_IMAGE_TAG`: Docker image tag.
 
-## Deploy steps (native)
+## [deploy] Deploy steps (native)
 
 - Set GCP project
   `gcloud config set project %PROJECT_ID%`
@@ -79,7 +79,7 @@ This service is designed to run as a standalone auth server, separate from your 
 
 
 
-## References
+## [clip] References
 
 - OpenAI Apps SDK Auth: <https://developers.openai.com/apps-sdk/build/auth/>
 - MCP Authorization Specification: <https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization>
