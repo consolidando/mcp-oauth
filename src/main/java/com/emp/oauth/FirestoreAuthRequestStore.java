@@ -12,6 +12,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.SetOptions;
 
 @ApplicationScoped
@@ -96,6 +97,24 @@ public class FirestoreAuthRequestStore {
                     .get();
         } catch (Exception e) {
             throw new IllegalStateException("Failed to update auth request userId", e);
+        }
+    }
+
+    public int cleanupExpired(Instant now) {
+        try {
+            Timestamp cutoff = Timestamp.ofTimeSecondsAndNanos(now.getEpochSecond(), now.getNano());
+            var snapshot = firestore.collection(collectionName)
+                    .whereLessThan("expiresAt", cutoff)
+                    .get()
+                    .get();
+            int removed = 0;
+            for (QueryDocumentSnapshot doc : snapshot.getDocuments()) {
+                doc.getReference().delete().get();
+                removed++;
+            }
+            return removed;
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to cleanup auth requests", e);
         }
     }
 }

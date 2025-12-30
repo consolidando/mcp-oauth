@@ -13,6 +13,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.SetOptions;
 
 @ApplicationScoped
@@ -96,6 +97,35 @@ public class FirestoreRefreshTokenStore {
                     .get();
         } catch (Exception e) {
             throw new IllegalStateException("Failed to mark refresh token used", e);
+        }
+    }
+
+    public int cleanup(Instant now) {
+        try {
+            Timestamp cutoff = Timestamp.ofTimeSecondsAndNanos(now.getEpochSecond(), now.getNano());
+            java.util.Set<String> ids = new java.util.HashSet<>();
+            var expiresSnapshot = firestore.collection(collectionName)
+                    .whereLessThan("expiresAt", cutoff)
+                    .get()
+                    .get();
+            for (QueryDocumentSnapshot doc : expiresSnapshot.getDocuments()) {
+                ids.add(doc.getId());
+            }
+            var usedSnapshot = firestore.collection(collectionName)
+                    .whereLessThan("usedAt", cutoff)
+                    .get()
+                    .get();
+            for (QueryDocumentSnapshot doc : usedSnapshot.getDocuments()) {
+                ids.add(doc.getId());
+            }
+            int removed = 0;
+            for (String id : ids) {
+                firestore.collection(collectionName).document(id).delete().get();
+                removed++;
+            }
+            return removed;
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to cleanup refresh tokens", e);
         }
     }
 }

@@ -27,6 +27,7 @@ This service is designed to run as a standalone auth server, separate from your 
 - `EMP_OAUTH_REFRESH_TOKEN_TTL_SECONDS`: Refresh token lifetime in seconds.
 - `EMP_OAUTH_AUTO_CONSENT`: If `true`, skip the consent screen after login.
 - `EMP_OAUTH_CONSENT_BRAND_NAME`: Brand text shown on the consent page.
+- `EMP_OAUTH_CLEANUP_CLIENTS_INACTIVE_DAYS`: Days of inactivity before cleanup removes a client.
 
 ### Keys and JWKS (ES256)
 
@@ -76,6 +77,10 @@ You can run your application in dev mode that enables live coding using:
 ```
 
 > **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+
+## Cleanup endpoint
+
+For cron-driven cleanup, call `POST /oauth/cleanup`. It removes expired auth requests, used/expired auth codes and refresh tokens, and clients inactive for the configured number of days.
 
 ## Packaging and running the application
 

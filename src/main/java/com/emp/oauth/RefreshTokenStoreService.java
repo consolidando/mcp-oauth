@@ -41,4 +41,11 @@ public class RefreshTokenStoreService {
         }
         inMemoryRefreshTokenStore.markUsed(token, rotatedTo);
     }
+
+    public int cleanup(java.time.Instant now) {
+        if (firestoreEnabled) {
+            return firestoreRefreshTokenStore.cleanup(now);
+        }
+        return inMemoryRefreshTokenStore.cleanup(now);
+    }
 }

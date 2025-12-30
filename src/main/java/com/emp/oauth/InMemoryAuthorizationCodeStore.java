@@ -18,4 +18,16 @@ public class InMemoryAuthorizationCodeStore {
     public Optional<AuthorizationCodeRecord> find(String code) {
         return Optional.ofNullable(codes.get(code));
     }
+
+    public int cleanup(java.time.Instant now) {
+        int removed = 0;
+        for (var entry : codes.entrySet()) {
+            AuthorizationCodeRecord record = entry.getValue();
+            if (record.getUsedAt() != null || record.getExpiresAt().isBefore(now)) {
+                codes.remove(entry.getKey());
+                removed++;
+            }
+        }
+        return removed;
+    }
 }

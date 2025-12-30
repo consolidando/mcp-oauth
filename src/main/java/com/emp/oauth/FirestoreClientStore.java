@@ -13,6 +13,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import com.google.cloud.Timestamp;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.Firestore;
+import com.google.cloud.firestore.QueryDocumentSnapshot;
 import com.google.cloud.firestore.SetOptions;
 
 @ApplicationScoped
@@ -91,6 +92,37 @@ public class FirestoreClientStore {
                     .get();
         } catch (Exception e) {
             throw new IllegalStateException("Failed to update client lastUsedAt", e);
+        }
+    }
+
+    public int cleanupInactive(Instant cutoff) {
+        try {
+            Timestamp cutoffTimestamp = Timestamp.ofTimeSecondsAndNanos(
+                    cutoff.getEpochSecond(), cutoff.getNano());
+            java.util.Set<String> ids = new java.util.HashSet<>();
+            var lastUsedSnapshot = firestore.collection(clientsCollection)
+                    .whereLessThan("lastUsedAt", cutoffTimestamp)
+                    .get()
+                    .get();
+            for (QueryDocumentSnapshot doc : lastUsedSnapshot.getDocuments()) {
+                ids.add(doc.getId());
+            }
+            var neverUsedSnapshot = firestore.collection(clientsCollection)
+                    .whereEqualTo("lastUsedAt", null)
+                    .whereLessThan("createdAt", cutoffTimestamp)
+                    .get()
+                    .get();
+            for (QueryDocumentSnapshot doc : neverUsedSnapshot.getDocuments()) {
+                ids.add(doc.getId());
+            }
+            int removed = 0;
+            for (String id : ids) {
+                firestore.collection(clientsCollection).document(id).delete().get();
+                removed++;
+            }
+            return removed;
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to cleanup inactive clients", e);
         }
     }
 }

@@ -27,4 +27,16 @@ public class InMemoryRefreshTokenStore {
         }
         record.markUsed(Instant.now(), rotatedTo);
     }
+
+    public int cleanup(java.time.Instant now) {
+        int removed = 0;
+        for (var entry : tokens.entrySet()) {
+            RefreshTokenRecord record = entry.getValue();
+            if (record.getUsedAt() != null || record.getExpiresAt().isBefore(now)) {
+                tokens.remove(entry.getKey());
+                removed++;
+            }
+        }
+        return removed;
+    }
 }

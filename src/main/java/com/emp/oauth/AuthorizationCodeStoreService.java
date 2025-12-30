@@ -39,4 +39,11 @@ public class AuthorizationCodeStoreService {
             firestoreAuthorizationCodeStore.markUsed(code);
         }
     }
+
+    public int cleanup(java.time.Instant now) {
+        if (firestoreEnabled) {
+            return firestoreAuthorizationCodeStore.cleanup(now);
+        }
+        return inMemoryAuthorizationCodeStore.cleanup(now);
+    }
 }
