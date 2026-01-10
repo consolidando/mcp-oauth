@@ -23,3 +23,4 @@ No warranties are given. The license may not give you all of the permissions nec
 ### Creative Commons is not a law firm and does not provide legal services. Distributing, displaying, or linking to this deed or the license that it summarizes does not create a lawyer-client or any other relationship.
 
 [Full License Text](https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode)
+
