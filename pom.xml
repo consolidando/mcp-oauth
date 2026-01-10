@@ -81,15 +81,13 @@
         <!-- Ensure Brotli native library is available on Linux (required for native-image) -->
         <dependency>
             <groupId>com.aayushatharva.brotli4j</groupId>
-            <artifactId>native-linux-x86_64</artifactId>
-            <version>1.16.0</version>
+            <artifactId>native-linux-x86_64</artifactId>           
             <scope>runtime</scope>
         </dependency>
         <!-- Force JRE flavor of Guava (needed for native-image, provides Striped64) -->
         <dependency>
             <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>33.3.1-jre</version>
+            <artifactId>guava</artifactId>         
         </dependency>
         <!-- Provide OpenTelemetry SDK classes referenced during native-image build -->
         <dependency>

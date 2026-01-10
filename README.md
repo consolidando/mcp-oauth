@@ -13,6 +13,8 @@ Minimal OAuth 2.0 authorization server for MCP clients, built with Quarkus. It s
 
 This service is designed to run as a standalone auth server, separate from your API and MCP server. It targets Google Cloud (Cloud Run + Firestore) out of the box.
 
+More information about the project is available at <https://diy.elmolidelanoguera.com/2026/01/un-servidor-de-autenticacion-con-google.html>.
+
 ## ⚙️ Environment configuration
 
 `.env.example` lists the environment variables used by this project that are not in the repo. Copy it to `.env` and fill in real values. How you load `.env` depends on your operating system. The `.env` file is not committed. The `.bat` helpers used to set the environment or deploy are examples and must be adapted to your system.
@@ -102,6 +104,7 @@ Call `POST /oauth/cleanup` from a scheduled job to remove expired auth requests,
 
 ## 📎 References
 
+- Project overview: <https://diy.elmolidelanoguera.com/2026/01/un-servidor-de-autenticacion-con-google.html>
 - OpenAI Apps SDK Auth: <https://developers.openai.com/apps-sdk/build/auth/>
 - MCP Authorization Specification: <https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization>
 - MCP Inspector Tooling: <https://modelcontextprotocol.io/docs/tools/inspector>
